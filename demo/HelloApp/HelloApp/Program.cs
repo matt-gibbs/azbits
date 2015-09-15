@@ -7,11 +7,12 @@ namespace HelloApp
     {
         static void Main(string[] args)
         {
-            Console.Write("hi");
+        	Console.WriteLine("hi");
             Console.ReadKey();
         }
     }
 }
+
 
 
 
@@ -34,6 +35,7 @@ namespace HelloApp
 
 
 /*
+// Hello demo
 using System;
 using Demo;
 
@@ -50,4 +52,51 @@ namespace HelloApp
         }
     }
 }
+*/
+
+/*
+// Rock demo
+using System;
+using Demo;
+using Demo.Models;
+
+namespace HelloApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            RockClient client = new RockClient();
+            Rock rock = client.ExampleRock();
+            Console.Write($"Rock {rock.Name} is {rock.Color} and {rock.Weight}");
+            Console.ReadKey();
+        }
+    }
+}
+*/
+
+
+/*
+// Pet demo
+using System;
+using Demo;
+using Demo.Models;
+
+namespace HelloApp
+{
+	class Program
+	{
+		static void Main(string[] args) 
+		{
+			PetClient petClient = new PetClient();
+			Pet pet = petClient.FindPetById(2);
+			Dog dog = pet as Dog;
+			if(dog != null)
+			{
+			    Console.WriteLine($"Dog {dog.Name} PackSize {dog.PackSize}");
+			}
+		}
+	}
+}
+
 */
