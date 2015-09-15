@@ -1,0 +1,89 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PetClient",
+    "version": "2015-09-01-preview"
+  },
+  "host": "localhost:41067",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "paths": {
+    "/api/pet/{petId}": {
+      "get": {
+        "operationId": "findPetById",
+        "description": "Gets a Pet.",
+        "parameters": [
+        {
+          "name": "petId",
+          "in": "path",
+          "description": "Id of pet to find.",
+          "required": true,
+          "type": "integer",
+          "format": "int64"
+        }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dog",
+            "schema": {
+              "$ref": "#/definitions/Dog"
+            }
+          },
+          "201": {
+            "description": "otherwise cats",
+            "schema": {
+              "$ref": "#/definitions/Cat"
+            }
+          },
+          "default": {
+            "description": "error",
+            "schema": {
+              "name": "message",
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Pet": {
+      "discriminator": "PetType",
+      "required": [
+        "PetType"
+      ],
+      "properties": {
+        "Name": {
+          "type": "string",
+          "description": "Pet name."
+        }
+      }
+    },
+    "Cat": {
+      "AllOf": [
+        {
+          "$ref": "Pet"
+        }
+      ],
+      "properties": {
+        "Breed": {
+          "type": "string"
+        }
+      }
+    },
+    "Dog": {
+      "AllOf": [
+        {
+          "$ref": "Pet"
+        }
+      ],
+      "properties": {
+        "PackSize": {
+          "type": "number",
+          "format": "int32"
+        }
+      }
+    }
+  }
+}
