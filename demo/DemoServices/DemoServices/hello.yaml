@@ -1,0 +1,19 @@
+---
+swagger: '2.0'
+info:
+  title: HelloClient
+  version: 2015-09-01-preview
+host: localhost:41067
+schemes:
+- http
+produces:
+- application/json
+paths:
+  "/api/hello":
+    get:
+      operationId: Greeting
+      parameters: []
+      responses:
+        '200':
+          schema:
+            type: string
