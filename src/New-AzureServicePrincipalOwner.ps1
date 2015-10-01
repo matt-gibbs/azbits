@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Creates a ServicePrincipal in Owner role for the current Azure subscription.
 
@@ -18,7 +18,7 @@ $passwordCredential.KeyId = $keyId
 $passwordCredential.Value = $Password
 
 # Create the AzureADApplication
-$homePage = "http://" + $identifier + ".com"
+$homePage = "http://" + $ServicePrincipalName + ".com"
 $identifierUri = "http://" + $ServicePrincipalName
 $application = New-AzureADApplication -DisplayName $ServicePrincipalName -HomePage $homePage -IdentifierUris $identifierUri -PasswordCredentials $passwordCredential
 
