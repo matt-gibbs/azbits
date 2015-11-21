@@ -4,48 +4,65 @@
 
 #>
 param(
-	[Parameter(Mandatory=$true)][string]$ServicePrincipalName,
-	[Parameter(Mandatory=$true)][string]$Password
+  [Parameter(Mandatory=$true)][string]$principalName
 )
 
-# Create the PSADPasswordCredential
-$keyId = [guid]::NewGuid()
+import-module -Name "AzureRM.Resources"
+$azContext = Get-AzureRmContext
+
+write-verbose("CREATE THE PSADPasswordCredential.")
+$psadCredential = New-Object Microsoft.Azure.Commands.Resources.Models.ActiveDirectory.PSADPasswordCredential
 $startDate = Get-Date
-$passwordCredential = New-Object Microsoft.Azure.Commands.Resources.Models.ActiveDirectory.PSADPasswordCredential
-$passwordCredential.StartDate = $startDate
-$passwordCredential.EndDate = $startDate.AddYears(1)
-$passwordCredential.KeyId = $keyId
-$passwordCredential.Value = $Password
+$psadCredential.StartDate = $startDate
+$psadCredential.EndDate = $startDate.AddYears(1)
+$psadCredential.KeyId = [guid]::NewGuid()
+$psadCredential.Value = [System.Guid]::NewGuid().ToString("N")
+#write-verbose("PSADPasswordCredential")
+write-verbose("StartDate: " + $psadCredential.StartDate)
+write-verbose("EndDate: " + $psadCredential.EndDate)
+write-verbose("KeyId: " + $psadCredential.KeyId)
+write-verbose("Value: " + $psadCredential.Value)
 
-# Create the AzureADApplication
-$homePage = "http://" + $ServicePrincipalName + ".com"
-$identifierUri = "http://" + $ServicePrincipalName
-$application = New-AzureRmADApplication -DisplayName $ServicePrincipalName -HomePage $homePage -IdentifierUris $identifierUri -PasswordCredentials $passwordCredential
+write-verbose("CREATE THE AzureRmADApplication.")
+$homePage = "http://" + $principalName + ".com"
+$identifierUri = "http://" + $principalName
+$application = New-AzureRmADApplication -DisplayName $principalName -HomePage $homePage -IdentifierUris $identifierUri -PasswordCredentials $psadCredential
+write-output("Suggestion: save output for future reference.") 
+write-verbose("AzureRmADApplication")
+write-verbose("ApplicationId: " + $application.ApplicationId)
+write-verbose("ApplicationObjectId: " + $application.ApplicationObjectId)
+write-verbose("AvailableToOtherTenants: " + $application.AvailableToOtherTenants)
+write-verbose("ApplicationId: " + $application.ApplicationId)
 
-echo "Save output somewhere to reference the IDs for future tasks."
-echo "Output from New-AzureRmADApplication."
-echo "Save the ApplicationObjectId somewhere in case you want to delete it later."
-$application
 
-# Create the Service Principal.
+write-verbose("CREATE THE AzureRmAdServicePrincipal")
 $principal = New-AzureRmADServicePrincipal -ApplicationId $application.ApplicationId
-echo "Output from New-AzureRmADServicePrincipal."
-$principal
+write-verbose("AzureRmADServicePrincipal")
+write-verbose("DisplayName: " + $principal.DisplayName)
+write-verbose("ObjectId: " + $principal.Id)
 
 # Give AD a moment to make the Service Principal available.
-Start-Sleep -s 10
+for($i = 10; $i -le 101; $i=$i+10)
+{
+  write-progress -activity "propagating in AD" -status "$i Complete:" -percentComplete $i;
+  Start-Sleep -s 1
+}
 
-# Create a Role Assignment granting "owner" permissions to the ServicePrincipal.
-$roleAssignment = New-AzureRmRoleAssignment -ObjectId $principal.Id -RoleDefinitionName "Owner"
-echo "Output from New-AzureRmRoleAssignment"
-$roleAssignment
+#write-verbose("CREATE A ROLE ASSIGNMENT GRANTING 'Owner' TO THE SERVICEPRINCIPAL AT SUBSCRIPTION SCOPE.")
+$scope = "/subscriptions/" + ($azContext.Subscription.SubscriptionId)
+$roleAssignment = New-AzureRmRoleAssignment -ObjectId $principal.Id -RoleDefinitionName "Owner" -Scope $scope
+write-verbose("AzureRmRoleAssignment")
+write-verbose("RoleDefinitionName: " + $roleAssignment.RoleDefinitionName)
+write-verbose("RoleDefinitionId: " + $roleAssignment.RoleDefinitionId)
+write-verbose("ObjectId: " + $roleAssignment.ObjectId)
 
-echo "You can now use applicationId and password for non-interactive login."
-$application.ApplicationId
+write-output("`r`nCommands for deleting the ServicePrincipal.")
+write-output("Remove-AzureRmRoleAssignment -ObjectId " + $roleAssignment.ObjectId + " -RoleDefinitionName Owner -Force")
+write-output("Remove-AzureRmADServicePrincipal -ObjectId " + $principal.Id + " -Force")
+write-output("Remove-AzureRmADApplication -ApplicationObjectId " + $application.ApplicationObjectId + " -Force")
 
-#echo "Removing AzureRmADServicePrincipal"
-#Remove-AzureRmADServicePrincipal -ObjectId $principal.Id  -Force
-#echo "Removing AzureRmADApplication"
-#Remove-AzureRmADApplication -ApplicationObjectId $application.ApplicationObjectId –Force
-#echo "Removing AzureRmADRoleAssignment assignment"
-#Remove-AzureRmADRoleAssignment -ObjectId $roleAssignment.Id  -Force
+write-output("`r`nParameters needed for API calls.")
+write-output("TenantId: " + $azContext.Tenant.TenantId)
+write-output("SubscriptionId: " + $azContext.Subscription.SubscriptionId)
+write-output("ApplicationId: " + $application.ApplicationId)
+write-output("Secret: " + $psadCredential.Value)
